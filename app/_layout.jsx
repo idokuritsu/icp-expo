@@ -10,7 +10,6 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { HiddenHeaderSettings } from "../components/reuseable";
 import AuthLayout from "./(auth)/_layout";
 
-
 const NavigationStack = createStackNavigator();
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -37,18 +36,6 @@ export default function RootLayout() {
         linkingSubscription.remove();
       };
     },
-    config: {
-      screens: {
-        // Auth: {
-        //   path: "Auth",
-        //   screens: {
-        //     authenticate: "authenticate",
-        //     customize: "customize",
-        //   },
-        // },
-       
-      },
-    },
   };
 
   useEffect(() => {
@@ -60,29 +47,25 @@ export default function RootLayout() {
   }, []);
   return (
     <AuthProvider>
-    <NavigationContainer
-                  linking={linking}
-                  independent={true}
-                  ref={navigationRef}
-                >
-                  <NavigationStack.Navigator initialRouteName="index">
-                    <NavigationStack.Screen
-                      name="index"
-                      component={Onboard}
-                      options={HiddenHeaderSettings}
-                    />
-                    <NavigationStack.Screen
-                      name="Auth"
-                      component={AuthLayout}
-                      options={HiddenHeaderSettings}
-                    />
-                    
-                  </NavigationStack.Navigator>
-                </NavigationContainer>
-                <StatusBar
-                  backgroundColor={"black"}
-                  style="light"
-                />
+      <NavigationContainer
+        linking={linking}
+        independent={true}
+        ref={navigationRef}
+      >
+        <NavigationStack.Navigator initialRouteName="index">
+          <NavigationStack.Screen
+            name="index"
+            component={Onboard}
+            options={HiddenHeaderSettings}
+          />
+          <NavigationStack.Screen
+            name="Auth"
+            component={AuthLayout}
+            options={HiddenHeaderSettings}
+          />
+        </NavigationStack.Navigator>
+      </NavigationContainer>
+      <StatusBar backgroundColor={"black"} style="light" />
     </AuthProvider>
   );
 }

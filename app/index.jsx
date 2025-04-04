@@ -1,4 +1,3 @@
-import { StyleSheet, View } from "react-native";
 import React, { useEffect } from "react";
 
 import "../polyfills";
@@ -16,5 +15,3 @@ const Onboard = () => {
 };
 
 export default Onboard;
-
-const styles = StyleSheet.create({});

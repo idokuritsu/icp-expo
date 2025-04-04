@@ -1,7 +1,7 @@
 import "react-native-get-random-values";
 import React, { createContext, useState, useContext, useEffect } from "react";
 import * as Linking from "expo-linking";
-import InAppBrowser from "react-native-inappbrowser-reborn";
+import * as WebBrowser from 'expo-web-browser';
 import {
   DelegationChain,
   DelegationIdentity,
@@ -65,58 +65,59 @@ export const AuthProvider = ({ children }) => {
     }
 
     const derKey = toHex(baseKey.getPublicKey().toDer());
-    const redirectUri = Linking.createURL("Auth/home"); //"exp+expo-template-default://expo-development-client/?url=http%3A%2F%2F192.168.0.105%3A8081";//
+    const redirectUri = Linking.createURL("Auth/home");
 
     console.log(redirectUri, " ......");
 
-    const authUrl = `https://${
-      expoEnv.EXPO_PUBLIC_CANISTER_ID_ICP_AUTH_FRONTEND
-    }.icp0.io/?redirect_uri=${encodeURIComponent(
+    const authUrl = `https://icpfe.vercel.app/?redirect_uri=${encodeURIComponent(
       redirectUri
     )}&requestFor="internetIdentity"&pubkey=${derKey}`;
 
     console.log(authUrl, " authUrl");
+    
+    // Set up URL listener before opening browser
+    const subscription = Linking.addEventListener('url', handleRedirect);
+    
     try {
-      if (await InAppBrowser.isAvailable()) {
-        const result = await InAppBrowser.openAuth(authUrl, redirectUri, {
-          // Customize your in-app browser options
-          dismissButtonStyle: "cancel",
-          readerMode: false,
-          animated: true,
-          modalPresentationStyle: "fullScreen",
-          modalEnabled: true,
-          enableBarCollapsing: false,
-          showTitle: true,
-        });
-
-        if (result.type === "success" && result.url) {
-          const token = extractTokenFromUrl(result.url);
-          setUser(token); // Store the token
-          const search = new URLSearchParams(result.url?.split("?")[1]);
-          const delegation = search.get("delegation");
-          if (delegation) {
-            const chain = DelegationChain.fromJSON(
-              JSON.parse(decodeURIComponent(delegation))
-            );
-            /**
-             * @type {DelegationIdentity}
-             */
-            const id = DelegationIdentity.fromDelegation(baseKey, chain);
-
-            //TODO: STORE IDENTITY HERE
-            setIdentity(id);
-            storeDelegation(id);
-            //TODO: ADD REDIRECT
-            rootNavigate("Auth", { screen: "home" });
-            // InAppBrowser.closeAuth();
-          }
-        }
-      } else {
-        // Handle fallback if InAppBrowser is not available
-        console.log("InAppBrowser not available");
+      // Open browser with auth URL
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      
+      // WebBrowser was dismissed without getting the success type
+      if (result.type !== 'success') {
+        console.log('Authentication was cancelled');
       }
     } catch (error) {
-      console.error("Error with in-app browser:", error);
+      console.error("Error with web browser:", error);
+    } finally {
+      // Always remove the event listener
+      subscription.remove();
+    }
+  };
+  
+  // Handle redirect from browser
+  const handleRedirect = async (event) => {
+    // Get the URL that was used for redirection
+    const url = event.url;
+    
+    if (url) {
+      const token = extractTokenFromUrl(url);
+      setUser(token); // Store the token
+      
+      const search = new URLSearchParams(url?.split("?")[1]);
+      const delegation = search.get("delegation");
+      
+      if (delegation) {
+        const chain = DelegationChain.fromJSON(
+          JSON.parse(decodeURIComponent(delegation))
+        );
+        
+        const id = DelegationIdentity.fromDelegation(baseKey, chain);
+        
+        setIdentity(id);
+        storeDelegation(id);
+        
+        rootNavigate("Auth", { screen: "home" });
+      }
     }
   };
 
