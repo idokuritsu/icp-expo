@@ -13,7 +13,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { storeDelegation } from "../config/AuthStorage";
 import { toHex } from "@dfinity/agent";
 import * as SecureStore from "expo-secure-store";
-import * as AuthSession from "expo-auth-session";
 
 async function save(key, value) {
   await SecureStore.setItemAsync(key, value);
