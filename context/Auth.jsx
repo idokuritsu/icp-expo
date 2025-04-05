@@ -8,6 +8,7 @@ import {
   Ed25519KeyIdentity,
   isDelegationValid,
 } from "@dfinity/identity";
+import { expoEnv } from "../config/expo-env";
 import { rootNavigate } from "../config/RootNavigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { storeDelegation } from "../config/AuthStorage";
@@ -61,6 +62,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (requestFor) => {
+    const subscription = Linking.addEventListener("url", handleRedirect);
     try {
       setIsLoading(true);
 
@@ -70,7 +72,6 @@ export const AuthProvider = ({ children }) => {
 
       const derKey = toHex(baseKey.getPublicKey().toDer());
 
-      // Use Linking.createURL instead of AuthSession.makeRedirectUri for better compatibility
       const redirectUri = Linking.createURL("Auth/home");
 
       console.log(redirectUri, " ......");
@@ -81,10 +82,6 @@ export const AuthProvider = ({ children }) => {
 
       console.log(authUrl, " authUrl");
 
-      // Register for the redirect event before opening browser
-      const listener = Linking.addEventListener("url", handleRedirect);
-
-      // Use WebBrowser directly instead of AuthSession for better control
       const result = await WebBrowser.openAuthSessionAsync(
         authUrl,
         redirectUri,
@@ -93,33 +90,28 @@ export const AuthProvider = ({ children }) => {
           createTask: true,
           showTitle: true,
           enableDefaultShare: false,
-          ephemeralWebSession: false, // This is important - don't use ephemeral session
+          ephemeralWebSession: false,
         }
       );
 
       console.log("Browser session result:", result);
 
-      // The listener will handle successful redirects, this is just for error cases
       if (result.type !== "success") {
         console.log(
           "Browser was closed. Checking if we received delegation..."
         );
 
-        // Check if we already have an identity from the redirect handler
-        if (!identity) {
-          console.log(
-            "No delegation received. Authentication may have failed."
-          );
-        }
+        // if (!identity) {
+        //   console.log(
+        //     "No delegation received. Authentication may have failed."
+        //   );
+        // }
       }
     } catch (error) {
       console.error("Error with authentication session:", error);
     } finally {
-      // Remove the listener after a delay to ensure it catches late redirects
-      setTimeout(() => {
-        Linking.removeEventListener("url", handleRedirect);
-        setIsLoading(false);
-      }, 1000);
+      subscription.remove();
+      setIsLoading(false);
     }
   };
 

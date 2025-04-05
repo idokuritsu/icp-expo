@@ -20,6 +20,7 @@ const prefix = Linking.createURL("");
 export default function RootLayout() {
   const handleDeepLink = (event) => {
     let data = Linking.parse(event.url);
+    console.log("Deep link handled:", data);
   };
   const linking = {
     prefixes: [prefix, "auth://"],
